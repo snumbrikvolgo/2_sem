@@ -24,7 +24,9 @@ class translator
             size_t input_size        = 0;
             size_t output_size       = 0;
 
+            int get_com             ();
             int get_int             ();
+            double get_doub         ();
             void elf_header         ();
 
     public:
@@ -42,7 +44,7 @@ class translator
 const int max_binary            = 10000;
 const int header_size           = 210;
 
-#include "commands.h"
+#include "enums.h"
 
 
 
@@ -54,11 +56,29 @@ translator:: ~translator()
 
 }
 
-int translator:: get_int()
+int translator:: get_com()
 {
     int tmp = 0;
     memcpy (&tmp, this -> input_cur, sizeof(char));
+    this -> input_cur += sizeof(char);
+
+    return tmp;
+}
+
+int translator:: get_int()
+{
+    int tmp = 0;
+    memcpy (&tmp, this -> input_cur, sizeof(int));
     this -> input_cur += sizeof(int);
+
+    return tmp;
+}
+
+double translator:: get_doub()
+{
+    double tmp = 0;
+    memcpy (&tmp, this -> input_cur, sizeof(double));
+    this -> input_cur += sizeof(double);
 
     return tmp;
 }
@@ -69,13 +89,11 @@ void translator:: make_input()
     assert(file);
 
     this -> input_size = size_of_file(file);
-    std::cout<< this -> input_size;
     this -> input_buffer = (char*) calloc(this -> input_size, 1);
-    //std::cout<< input_buffer ;
     assert(this -> input_buffer);
 
     fread(this -> input_buffer, 1, this -> input_size, file);
-    printf("%s \n", (char*)(this -> input_buffer));
+    this -> input_cur = this -> input_buffer;
     fclose(file);
 
 }
@@ -97,8 +115,7 @@ void translator:: translate()
 
     while ((size_t) ((size_t)(this -> input_cur) - (size_t)(this -> input_buffer)) <= this -> input_size)
     {
-        int temp = get_int();
-        printf("\ncur int %x\n", temp);
+        int temp = get_com();
         #define CMD(number, command)        \
                 case (number):              \
                 {                           \
@@ -106,23 +123,15 @@ void translator:: translate()
                     break;                  \
                 }
 
-        // switch(temp)
-        // {
-        //     CMD(END, {
-        //             dw (0x8148) db (0xc5) dd (0x400)
-        //             db (0xb8)   dd (0x3c)					//mov rax, 60
-        //             dw (0x3148) db (0xff)					//xor rdi, rdi
-        //             dw (0x050f) 						//syscall
-        //
-        //         })
-        //
-        // }
+        switch(temp)
+        {
+
+            #include "commands.h"
+        }
 
         #undef CMD
 
     }
-
-    //free(this -> input_buffer); //????
 
     this -> output_buffer -= 10;
     this -> output_size = (size_t) ((size_t)this -> output_cur - (size_t)this -> output_buffer);
@@ -132,15 +141,11 @@ void translator:: make_output()
 {
     void* output = calloc(this -> output_size + header_size, 1);
     assert(output);
-    std:: cout<< (char*)output_buffer;
+    //std:: cout<< (char*);
     memcpy(output + header_size, this -> output_buffer, this -> output_size);
-    //printf("output + header1 %s \n", output + header_size);
 
     this -> output_buffer = output;
 	this -> output_cur = output;
-
-    //printf("output -> buffer + header %s \n", this -> output_buffer + header_size);
-    //printf("output -> buffer %s \n", this -> output_buffer);
 
     elf_header();
     FILE* file = fopen("exit", "w");
@@ -212,7 +217,7 @@ void translator:: elf_header()
     db (0xeb);                                  //jmp over .data
     db (0x20);
 
-    /*db ('0');                                   //buffer "0123456789abcdef"
+    db ('0');                                   //buffer "0123456789abcdef"
     db ('1');
     db ('2');
     db ('3');
@@ -227,6 +232,6 @@ void translator:: elf_header()
     db ('c');
     db ('d');
     db ('e');
-    db ('f');*/
+    db ('f');
 
 }
