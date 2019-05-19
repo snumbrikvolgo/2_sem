@@ -2,16 +2,17 @@
 #include <cstring>
 #include <stdlib.h>
 #include "translator.h"
-
+#include <time.h>
 int main ()
 {
 	translator translator;
 	translator.make_input();
-    std::cout << "huuuuui111111\n";
 	translator.translate ();
-    std::cout << "huuu222222\n";
 	translator.make_output ();
-    std::cout << "huuu3333\n";
 	system ("chmod 777 ./exit");
+	clock_t   t = clock();
+	//for (int i = 0; i <1000; i++)
+	system ("./exit");
+	printf("%ld time for binary", clock() - t);
 	return 0;
 }
